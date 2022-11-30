@@ -3,10 +3,10 @@ import datetime
 import numpy as np
 import matplotlib.pyplot as plt
 import random
-from Prey import Prey
-from Predator import Predator
-from Graph import Graph
-from customizedFunctions import *
+from Code.Prey import Prey
+from Code.Predator import Predator
+from Code.Graph import Graph
+from Code.customizedFunctions import *
 
 import networkx as nx
 
