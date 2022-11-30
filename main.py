@@ -21,14 +21,22 @@ preyFoundCounter = 0
 predatorFoundCounter = 0
 states = []
 
-
+# To initiate different state spaces for the graph
+def initializeStates():
+    # States represent unique state possible in the environment: (Agent Position, Prey, Predator)
+    for i in range(size):
+        for j in range(size):
+            for k in range(size):
+                states.append((i,j,k))
 
 
 if __name__=='__main__':
     g = Graph(size)
     start_time = datetime.datetime.now()
 
-    
+    initializeStates()
+    print(states)
+    print(len(states))
 
 
     # countTotal(res)
