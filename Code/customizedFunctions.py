@@ -1,10 +1,11 @@
 import random
+import Code.Settings as gVar
+import csv
 
-global size
 
 # Setting the Prey belief:
 def initializePreyStateBelief(preyKnown = 0):
-    global preyStateBelief, prey, agentPos
+    global preyStateBelief, prey, agentPos, size
     b = 1/(size-1)
     for i in range(size):
         if i != agentPos and preyKnown==0:
@@ -36,9 +37,8 @@ def fetchFirstTupleElement(nodes):
     return res
 
 # Function to create the Tree
-def create_env(g):
-    g.randomLinkandEdges()
-    return g
+def create_env():
+    gVar.g.randomLinkandEdges()
 
 # Spawns Prey, Predator and Agent. Prey and Predator are spawned randomly, while Agent is spawned in any place other than Prey and Predator
 def placeEntities(g):
@@ -128,3 +128,30 @@ def getStateBelief(x):
         for i in predatorStateBelief:
             m+= predatorStateBelief[i]
     return m
+
+
+# input: List containing each element as list of Win/Loss/Tie, No. of steps, PreyFoundCounter, PredatorFoundCounter
+# def writeToCSV(data):
+#     with open('Utilities.csv', 'w', newline='') as file:
+#         writer = csv.writer(file, delimiter='')
+#         # if agentNo <= 2:
+#         #     writer.writerow(['Status','Steps'])
+#         # elif agentNo <= 3:
+#         #     writer.writerow(['Status','Steps','PreyFoundCounter'])
+#         # elif agentNo >= 4:
+#         #     writer.writerow(['Status','Steps','PreyFoundCounter','PredatorFoundCounter'])
+#         # elif agentNo > 6:
+#         #     writer.writerow(['Status','Steps','PreyFoundCounter','PredatorFoundCounter'])
+#         for i in data:
+#             writer.writerow(str(i)+' : '+(str(data[i])))
+#         file.close()
+#     # print("Successfully written to file {}", 'a_' + str(agentNo) + '.csv')
+#     print("Successfully written to file.")
+
+def writeToCSV(data):
+    with open('Utilities.csv', 'w', newline='') as file:
+        for i in data:
+            file.write(str(i)+' : '+(str(data[i]))+'\n')
+        file.close()
+    # print("Successfully written to file {}", 'a_' + str(agentNo) + '.csv')
+    print("Successfully written to file.")

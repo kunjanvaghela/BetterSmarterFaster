@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import random
 import numpy as np
+import Code.Settings as gVar
 
 
 class Graph(object):
@@ -20,10 +21,9 @@ class Graph(object):
         self.adjMatrix[node2][node1] = 1
 
     def checkdegree(self,node1):
-        global size
         degree=0
         #for i in range(size): 
-        for j in range(size):
+        for j in range(self.size):
             #print('node1:',node1)
             #print('j:',j)
             if((self.adjMatrix[node1][j])==1):
@@ -42,10 +42,10 @@ class Graph(object):
                 randomnodeseed= random.choice(inclusionlist)
                 # print('::node1',node1,':randomnode:',randomnodeseed)
                 randomnode=randomnodeseed
-                if randomnodeseed>(size-6):
-                    randomnode=randomnodeseed-(size)
+                if randomnodeseed>(self.size-6):
+                    randomnode=randomnodeseed-(self.size)
                 if randomnodeseed<0:
-                    randomnode=size+randomnodeseed
+                    randomnode=self.size+randomnodeseed
                 #print('::node1',node1,'g.checkdegree(node1)',g.checkdegree(node1),'randomnode:',randomnode,'::g.checkdegree(randomnode)::',g.checkdegree(randomnode))
                 
                 if self.checkdegree(randomnode)<3:
@@ -75,27 +75,27 @@ class Graph(object):
         plt.show()
 
     def randomLinkandEdges(self):
-         for i in range(0,size):
+        for i in range(0, self.size):
           if i==0:
-            self.add_edge(0,size-1)
+            self.add_edge(0, self.size-1)
             self.add_edge(0,i+1)
-          elif i==size-1:
+          elif i== self.size-1:
             break
           else:
             self.add_edge(i,i+1)
          #g.print_matrix()
-         for i in range (size):
+        for i in range (self.size):
             if(self.checkdegree(i)<3):
                 self.add_randomEdge(i)
     
     # returns a random node, this is used to get random nodes to spawn Prey and Predator
     def getRandomNode(self):
-        return random.choice(range(size))
+        return random.choice(range(self.size))
     
     # To get the nodes adjacent/connected to the node passed in the adjacency matrix. 
     def getNextNodes(self, node):
         res = []
-        for j in range(size):
+        for j in range(self.size):
             if((self.adjMatrix[node][j])==1):
                 res.append(j)
         # print('Next nodes : '+str(res))
@@ -120,7 +120,7 @@ class Graph(object):
         childToParentMap = {}
         distanceMapping = {}
         shortestPathFound = False
-        for i in range(size):
+        for i in range(self.size):
             distanceMapping[i] = -1
         distanceMapping[source] = 0
         while len(fringe) != 0:

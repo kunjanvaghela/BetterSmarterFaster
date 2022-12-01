@@ -806,18 +806,3 @@ def generateGraph():
             genG.add_edge(i, n)
 
 
-# input: List containing each element as list of Win/Loss/Tie, No. of steps, PreyFoundCounter, PredatorFoundCounter
-def writeToCSV(data, agentNo):
-    with open('a_' + str(agentNo) + '.csv', 'w', newline='') as file:
-        writer = csv.writer(file, delimiter=',')
-        if agentNo <= 2:
-            writer.writerow(['Status','Steps'])
-        elif agentNo <= 3:
-            writer.writerow(['Status','Steps','PreyFoundCounter'])
-        elif agentNo >= 4:
-            writer.writerow(['Status','Steps','PreyFoundCounter','PredatorFoundCounter'])
-        # elif agentNo > 6:
-        #     writer.writerow(['Status','Steps','PreyFoundCounter','PredatorFoundCounter'])
-        writer.writerows(data)
-        file.close()
-    print("Successfully written to file {}", 'a_' + str(agentNo) + '.csv')
