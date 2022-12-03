@@ -14,4 +14,5 @@ preyFoundCounter = 0
 predatorFoundCounter = 0
 states = []
 utilityOfStates = {}
-utilityIterationCount = 20
+utilityIterationCount = 1000
+agentPos = -1

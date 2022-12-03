@@ -42,30 +42,28 @@ def create_env():
 
 # Spawns Prey, Predator and Agent. Prey and Predator are spawned randomly, while Agent is spawned in any place other than Prey and Predator
 def placeEntities(g):
-    global predator, prey
-    prey.setNode(g.getRandomNode())
-    predator.setNode(g.getRandomNode())
-    agentPos = g.getRandomNode()
-    while (agentPos == predator.currNode or agentPos== prey.currNode):
-        agentPos = g.getRandomNode()
-    return agentPos
+    gVar.prey.setNode(g.getRandomNode())
+    gVar.predator.setNode(g.getRandomNode())
+    gVar.agentPos = gVar.g.getRandomNode()
+    while (gVar.agentPos == gVar.predator.currNode or gVar.agentPos== gVar.prey.currNode):
+        gVar.agentPos = gVar.g.getRandomNode()
+    return gVar.agentPos
 
 # To show position of all the entities:
 def showEntityPositions():
     # print('Agent Position : ' + str(agentPos))
     # print('Predator Position : ' + str(predator.getCurrNode()))
     # print('Prey Position : ' + str(prey.getCurrNode()))
-    print('Agent Position : ' + str(agentPos)+'; Predator Position : ' + str(predator.getCurrNode())+'; Prey Position : ' + str(prey.getCurrNode()))
+    print('Agent Position : ' + str(gVar.agentPos)+'; Predator Position : ' + str(gVar.predator.getCurrNode())+'; Prey Position : ' + str(gVar.prey.getCurrNode()))
 
 # To initiate movement of the Prey and Predator in the current timestamp
-def preyPredatorMovement(easilyDistractedPredator = 0):
-    global g, predator, prey
+def preyPredatorMovement(easilyDistractedPredator = 1):
     # Movement of Prey
-    prey.move(g.getNextNodes(prey.currNode))
+    gVar.prey.move(gVar.g.getNextNodes(gVar.prey.currNode))
     if easilyDistractedPredator == 0:
-        predator.move(g.breadthFirstSearch(predator.getCurrNode(), agentPos)[0])    # Taking only the first argument (path) as received from g.breadthFirstSearch()
+        gVar.predator.move(gVar.g.breadthFirstSearch(gVar.predator.getCurrNode(), gVar.agentPos)[0])    # Taking only the first argument (path) as received from g.breadthFirstSearch()
     else:
-        predator.move(g.breadthFirstSearch(predator.getCurrNode(), agentPos)[0], 1)
+        gVar.predator.move(gVar.g.breadthFirstSearch(gVar.predator.getCurrNode(), gVar.agentPos)[0], 1)
 
 
 def isPredatorPosKnown():
@@ -149,7 +147,7 @@ def getStateBelief(x):
 #     print("Successfully written to file.")
 
 def writeToCSV(data):
-    with open('Utilities.csv', 'w', newline='') as file:
+    with open('Utilities.txt', 'w') as file:
         for i in data:
             file.write(str(i)+' : '+(str(data[i]))+'\n')
         file.close()

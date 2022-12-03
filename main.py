@@ -25,11 +25,11 @@ def initializeRewardOfStateS():
     # Initializes reward of being in a particular state
     for s in gVar.states:
         gVar.utilityOfStates[s] = {}
-        reward = float(0)
+        reward = float(-1)
         if s[0] == s[1]:
-            reward += 1
+            reward = 1
         if s[0] == s[2]:
-            reward -= float(1000)
+            reward = - float(1000)
         gVar.utilityOfStates[s][0] = reward
 
 
@@ -78,9 +78,12 @@ def probabilityOfNextState(stateS, timeT):
     nextStates = getNextStates(stateS)
     for nextState in nextStates:
         if nextState[1] in probPrey and nextState[2] in probPredator:
+            if gVar.utilityOfStates[stateS][timeT - 1] == 1 or gVar.utilityOfStates[stateS][timeT - 1] == -float(1000) or gVar.utilityOfStates[stateS][timeT - 1] == -999.0:
+                gVar.utilityOfStates[stateS][timeT] = -float('inf')
+                continue
             mid = gVar.utilityOfStates[stateS][0] + (gVar.utilityOfStates[nextState][timeT-1] * (probPrey[nextState[1]] * probPredator[nextState[2]]))
-            if gVar.utilityOfStates[stateS][timeT] < (mid - 1):
-                gVar.utilityOfStates[stateS][timeT] = (mid - 1)
+            if gVar.utilityOfStates[stateS][timeT] < mid:
+                gVar.utilityOfStates[stateS][timeT] = mid
 
 
 def calculateUtility():
@@ -94,7 +97,97 @@ def calculateUtility():
         for stateS in gVar.states:
             gVar.utilityOfStates[stateS][i] = - float('inf')
         for stateS in gVar.states:
-            probabilityOfNextState(stateS, i)
+            if gVar.utilityOfStates[stateS][i - 1] != -float('inf'):     # This is to implement that no need to calculate if prey or predator found in earlier timestamp.
+                probabilityOfNextState(stateS, i)
+
+# To get max value from the utility function 
+def getMaxValueFromState(stateS):
+    values = gVar.utilityOfStates[stateS]
+    max = - float('inf')
+    iterationNumber = None      # Denotes on which iteration the max value was found
+    for timeT in values:
+        if values[timeT] > max:
+            max = values[timeT]
+            iterationNumber = timeT
+    return (max, iterationNumber)
+
+# Policy of the given state -- Calculated as max number in the Utility of each adjacent state where agent can travel to.
+def policyOfUtility(stateS):
+    nextStates = getNextStates(stateS)
+    calculatedMaxState = (None, - float('inf'), None)       # Contains tuple (state, maxValue, iterationOfMaxValue)
+    for nextState in nextStates:
+        dummy = getMaxValueFromState(nextState)
+        if calculatedMaxState[1] < dummy[0]:
+            calculatedMaxState = (nextState, dummy[0], dummy[1])
+    print('calculatedMaxState : ',calculatedMaxState)
+    return calculatedMaxState[0]
+
+# To define agent movement:
+def agentUsingUtility():
+    tiebreaker = 0
+    statesTaken = [(gVar.agentPos, gVar.prey.getCurrNode(), gVar.predator.getCurrNode())]
+    prediction = [(gVar.agentPos, gVar.prey.getCurrNode(), gVar.predator.getCurrNode())]
+    while tiebreaker < 5000:
+        currAgentPos = gVar.agentPos
+        currPredatorPos = gVar.predator.getCurrNode()
+        currPreyPos = gVar.prey.getCurrNode()
+        if currAgentPos == currPredatorPos and currAgentPos == currPreyPos:
+            # return 2
+            return (2, statesTaken, prediction)
+        elif currAgentPos == currPredatorPos:
+            # return -1
+            return (1, statesTaken, prediction)
+        elif currAgentPos == currPreyPos:
+            # return 1
+            return (0, statesTaken, prediction)
+        getToState = policyOfUtility((currAgentPos, currPreyPos, currPredatorPos))
+        # Checks to see if getToState is correct.        
+        nextAgentPositions = gVar.g.getNextNodes(currAgentPos)
+        nextAgentPositions.append(currAgentPos)
+        nextPreyPositions = gVar.g.getNextNodes(currPreyPos)
+        nextPreyPositions.append(currPreyPos)
+        nextPredatorPositions = gVar.g.getNextNodes(currPredatorPos)
+        nextPredatorPositions.append(currPredatorPos)
+        if getToState[0] not in nextAgentPositions:
+            return 3
+        if getToState[1] not in nextPreyPositions:
+            return 4
+        if getToState[2] not in nextPredatorPositions:
+            return 5
+        # Allocating Agent's next best position as received from policy function of the Utility State:
+        gVar.agentPos = getToState[0]
+        preyPredatorMovement()
+        prediction.append(getToState)
+        statesTaken.append(((gVar.agentPos, gVar.prey.getCurrNode(), gVar.predator.getCurrNode())))
+        if currAgentPos == currPredatorPos and currAgentPos == currPreyPos:
+            # return 2
+            return (2, statesTaken, prediction)
+        elif currAgentPos == currPredatorPos:
+            # return -1
+            return (1, statesTaken, prediction)
+        elif currAgentPos == currPreyPos:
+            # return 1
+            return (0, statesTaken, prediction)
+
+        tiebreaker += 1
+        # gVar.pre = getToState[0]
+        # currPreyPos = gVar.prey.getCurrNode()
+    return (-2, statesTaken, prediction)
+
+
+# To perform different agents on loop
+def agentUsingUtilityLoop():
+    result = []
+    for i in range(100):
+        print('Agent run: ',i+1)
+        gVar.agentPos = placeEntities(gVar.g)
+        showEntityPositions()
+        result.append(agentUsingUtility())
+        showEntityPositions()
+    # print('Customized Agent Result = ' + str(result))
+    # countTotal(result)
+    # writeToCSV(result, gVar.agentNo)
+    return result
 
 
 if __name__=='__main__':
@@ -106,14 +199,15 @@ if __name__=='__main__':
     print(len(gVar.states))
 
     create_env()
-    stateToCheck = random.choice(gVar.states)
-    neighborsOfState = getNextStates(stateToCheck)
-    print('neighborsOfState : ',neighborsOfState)
-    print('Count neighborsOfState : ',len(neighborsOfState))
+    # stateToCheck = random.choice(gVar.states)
+    # neighborsOfState = getNextStates(stateToCheck)
+    # print('neighborsOfState : ',neighborsOfState)
+    # print('Count neighborsOfState : ',len(neighborsOfState))
 
     calculateUtility()
+    result = agentUsingUtilityLoop()
     writeToCSV(gVar.utilityOfStates)
-
+    print('Result = ', result)
 
     end_time = datetime.datetime.now()
     print('Start time : '+str(start_time))
