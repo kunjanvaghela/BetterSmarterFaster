@@ -153,3 +153,12 @@ def writeToCSV(data):
         file.close()
     # print("Successfully written to file {}", 'a_' + str(agentNo) + '.csv')
     print("Successfully written to file.")
+
+def writeToFile(data, filename):
+    filename = str(filename + '.txt')
+    with open(filename, 'w') as file:
+        for i in data:
+            file.write(str(i)+' : '+(str(data[i]))+'\n')
+        file.close()
+    # print("Successfully written to file {}", 'a_' + str(agentNo) + '.csv')
+    print("Successfully written to file.")

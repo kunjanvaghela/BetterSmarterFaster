@@ -7,6 +7,7 @@ from Code.customizedFunctions import *
 size = 50
 predator = Predator()
 prey = Prey()
+agentPos = -1
 g = Graph(size)
 preyStateBelief, predatorStateBelief = {}, {}
 pointSystem = {}
@@ -14,5 +15,6 @@ preyFoundCounter = 0
 predatorFoundCounter = 0
 states = []
 utilityOfStates = {}
-utilityIterationCount = 1000
-agentPos = -1
+utilityAtTimeT = {}
+utilityAtTimeTMinus1 = {}
+probabilityStateTransition = {}
