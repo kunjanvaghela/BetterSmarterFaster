@@ -8,7 +8,6 @@ import random
 # from Code.Graph import Graph
 from Code.customizedFunctions import *
 import Code.Settings as gVar
-import networkx as nx
 
 
 
@@ -27,19 +26,21 @@ def initializeRewardOfStateS():
         gVar.utilityOfStates[s] = {}
         reward = float(-1)
         if s[0] == s[1]:
-            reward = 1
+            reward = float(10000)           # Reward of being with the prey
         if s[0] == s[2]:
-            reward = - float(1000)
+            reward = - float(10000)      # Reward of being with the predator
         gVar.utilityOfStates[s][0] = reward
 
 
 def getNextStates(stateS):
-    nextStates = set()
+    nextStates = set()      # To store next states reachable from stateS in the var nextStates
+    # To get next agent, prey and predator positions from the current agent, prey and predator positions
     nextAgentPos = gVar.g.getNextNodes(stateS[0])
     nextAgentPos.append(stateS[0])
     nextPreyPos = gVar.g.getNextNodes(stateS[1])
     nextPreyPos.append(stateS[1])
     nextPredatorPos = gVar.g.getNextNodes(stateS[2])
+    nextPredatorPos.append(stateS[2])
     for i in nextAgentPos:
         for j in nextPreyPos:
             for k in nextPredatorPos:
@@ -54,23 +55,25 @@ def probabilityOfNextState(stateS, timeT):
     probPredator = {i:float(0) for i in nextPredatorPos}
     bfsResult = gVar.g.breadthFirstSearch(stateS[2], stateS[0])[0]  # Gets the path from Predator to Agent positions
     if len(bfsResult) == 1:
+        # If Predator and Agent Positions are the same, then bfs path will be 1 only. Adding current node in nextPredatorPos list.
         probPredator[stateS[2]] = float(0)
         nextPredatorPos.append(stateS[2])
     for nextPred in nextPredatorPos:
         if len(bfsResult) > 1:
+            # Adding 0.6 probability of predator going to the next node lying in BFS path to Agent
             if nextPred == bfsResult[1]:
                 probPredator[nextPred] += 0.6
-        # Since Predator will be in same cell only in this condition, captured this probability by including 
         elif len(bfsResult) == 1:
+            # Since Predator will be in same cell only in this condition, adding 0.6 probability to the current cell of the predator.
             if nextPred == bfsResult[0]:
                 probPredator[nextPred] += 0.6
+        # Divinding 0.4 probability into all other nodes that predator can go to
         probPredator[nextPred] += ((1 - 0.6) / len(nextPredatorPos))
     
-    # Get probability of all the next cells of the prey in 
+    # Calculate probability of Prey going to all the next cells from the current Prey Position
     nextPreyPos = gVar.g.getNextNodes(stateS[1])
-    probPrey = {i:float(0) for i in nextPreyPos}
     nextPreyPos.append(stateS[1])
-    probPrey[stateS[1]] = float(0)
+    probPrey = {i:float(0) for i in nextPreyPos}
     for nextPrey in nextPreyPos:
         probPrey[nextPrey] += (1 / len(nextPreyPos))
 
@@ -78,7 +81,7 @@ def probabilityOfNextState(stateS, timeT):
     nextStates = getNextStates(stateS)
     for nextState in nextStates:
         if nextState[1] in probPrey and nextState[2] in probPredator:
-            if gVar.utilityOfStates[stateS][timeT - 1] == 1 or gVar.utilityOfStates[stateS][timeT - 1] == -float(1000) or gVar.utilityOfStates[stateS][timeT - 1] == -999.0:
+            if gVar.utilityOfStates[stateS][timeT - 1] == 10000 or gVar.utilityOfStates[stateS][timeT - 1] == -float(10000):
                 gVar.utilityOfStates[stateS][timeT] = -float('inf')
                 continue
             mid = gVar.utilityOfStates[stateS][0] + (gVar.utilityOfStates[nextState][timeT-1] * (probPrey[nextState[1]] * probPredator[nextState[2]]))
@@ -92,13 +95,45 @@ def calculateUtility():
     # for i in range(1,gVar.utilityIterationCount + 1):
     #     for stateS in gVar.states:
     #         gVar.utilityOfStates[stateS][i] = - float('inf')
-    for i in range(1,gVar.utilityIterationCount + 1):
+    statesToCheck = gVar.states
+    i = 1
+    while True:
         print('Calculation for i = ',i)
-        for stateS in gVar.states:
+        for stateS in statesToCheck:
             gVar.utilityOfStates[stateS][i] = - float('inf')
-        for stateS in gVar.states:
-            if gVar.utilityOfStates[stateS][i - 1] != -float('inf'):     # This is to implement that no need to calculate if prey or predator found in earlier timestamp.
-                probabilityOfNextState(stateS, i)
+            # if gVar.utilityOfStates[stateS][i - 1] != -float('inf'):     # This is to implement that no need to calculate if prey or predator found in earlier timestamp.
+            probabilityOfNextState(stateS, i)
+        toRemove = []
+        if i < 4:
+            for stateS in statesToCheck:
+                if gVar.utilityOfStates[stateS][i] == -float('inf'):
+                    # Remove from statesToCheck
+                    toRemove.append(stateS)
+                    # statesToCheck.remove(stateS)
+        elif i > 5:
+            for stateS in statesToCheck:
+                first = gVar.utilityOfStates[stateS][i]
+                second = gVar.utilityOfStates[stateS][i-1]
+                third = gVar.utilityOfStates[stateS][i-2]
+                first = abs(first * 1000000)
+                second = abs(second * 1000000)
+                third = abs(third * 1000000)
+                if first == second and first == third:
+                    # Remove from statesToCheck
+                    toRemove.append(stateS)
+                    # statesToCheck.remove(stateS)
+        for r in toRemove:
+            statesToCheck.remove(r)
+        if len(statesToCheck) == 0:
+            break
+        i += 1
+    # for i in range(1,gVar.utilityIterationCount + 1):
+    #     print('Calculation for i = ',i)
+    #     for stateS in gVar.states:
+    #         gVar.utilityOfStates[stateS][i] = - float('inf')
+    #     for stateS in gVar.states:
+    #         if gVar.utilityOfStates[stateS][i - 1] != -float('inf'):     # This is to implement that no need to calculate if prey or predator found in earlier timestamp.
+    #             probabilityOfNextState(stateS, i)
 
 # To get max value from the utility function 
 def getMaxValueFromState(stateS):
