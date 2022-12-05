@@ -8,6 +8,7 @@ size = 50
 predator = Predator()
 prey = Prey()
 agentPos = -1
+agentIterations = 10000
 g = Graph(size)
 preyStateBelief, predatorStateBelief = {}, {}
 pointSystem = {}
@@ -18,3 +19,9 @@ utilityOfStates = {}
 utilityAtTimeT = {}
 utilityAtTimeTMinus1 = {}
 probabilityStateTransition = {}
+utilityOfNextAction = {}
+
+# Rewards
+rewardPrey = float(1)
+rewardPredator = - float(1000000)
+rewardNormal = - float(1)
