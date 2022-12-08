@@ -57,6 +57,7 @@ def showEntityPositions():
     print('Agent Position : ' + str(gVar.agentPos)+'; Predator Position : ' + str(gVar.predator.getCurrNode())+'; Prey Position : ' + str(gVar.prey.getCurrNode()))
 
 # To initiate movement of the Prey and Predator in the current timestamp
+#Do not move them together.
 def preyPredatorMovement(easilyDistractedPredator = 1):
     # Movement of Prey
     gVar.prey.move(gVar.g.getNextNodes(gVar.prey.currNode))
@@ -65,6 +66,16 @@ def preyPredatorMovement(easilyDistractedPredator = 1):
     else:
         gVar.predator.move(gVar.g.breadthFirstSearch(gVar.predator.getCurrNode(), gVar.agentPos)[0], 1)
 
+
+def preyMovement():
+    # Movement of Prey
+    gVar.prey.move(gVar.g.getNextNodes(gVar.prey.currNode))
+
+def predatorMovement(easilyDistractedPredator = 1):
+    if easilyDistractedPredator == 0:
+        gVar.predator.move(gVar.g.breadthFirstSearch(gVar.predator.getCurrNode(), gVar.agentPos)[0])    # Taking only the first argument (path) as received from g.breadthFirstSearch()
+    else:
+        gVar.predator.move(gVar.g.breadthFirstSearch(gVar.predator.getCurrNode(), gVar.agentPos)[0], 1)
 
 def isPredatorPosKnown():
     global predatorStateBelief

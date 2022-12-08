@@ -106,9 +106,17 @@ def getRewardOfState(stateS):
     return reward
 
 def calculateUtility(prob, state):
-    return (prob * gVar.utilityAtTimeTMinus1[state])
+    # return (prob * gVar.utilityAtTimeTMinus1[state])
+    val = getRewardOfState(state) + gVar.utilityAtTimeTMinus1[state]  #jn
+    # val = gVar.utilityAtTimeTMinus1[state]
+    # print("utility ", val)
+    if np.isnan(val):
+        val = 0
     # return (prob * (getRewardOfState(state) + gVar.utilityAtTimeTMinus1[state]))
-
+    # print("probval", prob, val)
+    if prob > 0.0:
+        return (prob * val)
+    return 0.0
 
 def calculateOptimalUtility():
     initializeRewardOfStateS()
@@ -134,10 +142,18 @@ def calculateOptimalUtility():
                 gVar.utilityOfNextAction[state] = {nextAction: 0. for nextAction in nextActionPositions}
                 # Calculating optimal utility
                 for nextState in transitionProbsCurrentState.keys():
-                    gVar.utilityOfNextAction[state][nextState[0]] += getRewardOfState(nextState) + calculateUtility(transitionProbsCurrentState[nextState], nextState)
+                    # print("so far ", gVar.utilityOfNextAction[state][nextState[0]])
+                    if (np.isnan(gVar.utilityOfNextAction[state][nextState[0]])):
+                        print("It's nan ")
+                        quit()
+                    if (np.isnan(getRewardOfState(nextState) + calculateUtility(transitionProbsCurrentState[nextState], nextState))):
+                        print("Check {0} {1} {2}", gVar.utilityOfNextAction[state][nextState[0]] , calculateUtility(transitionProbsCurrentState[nextState], nextState), getRewardOfState(nextState))
+                        quit()
+                    gVar.utilityOfNextAction[state][nextState[0]] += getRewardOfState(nextState) + calculateUtility(transitionProbsCurrentState[nextState], nextState)    #jn
                     # gVar.utilityOfNextAction[state][nextState[0]] += calculateUtility(transitionProbsCurrentState[nextState], nextState)
                 # Store optimal utility of time t in utilityAtTimeT
                 gVar.utilityAtTimeT[state] = max(gVar.utilityOfNextAction[state].values())
+                # gVar.utilityAtTimeT[state] = getRewardOfState(state) + max(gVar.utilityOfNextAction[state].values())
         
         maxi = - float('inf')
         for st in gVar.utilityAtTimeT:
@@ -194,7 +210,7 @@ def agentUsingUtility():
     tiebreaker = 0
     statesTaken = [(gVar.agentPos, gVar.prey.getCurrNode(), gVar.predator.getCurrNode())]
     prediction = [(gVar.agentPos, gVar.prey.getCurrNode(), gVar.predator.getCurrNode())]
-    while tiebreaker < 5000:
+    while tiebreaker < 10000:
         currAgentPos = gVar.agentPos
         currPredatorPos = gVar.predator.getCurrNode()
         currPreyPos = gVar.prey.getCurrNode()
@@ -223,7 +239,32 @@ def agentUsingUtility():
         #     return 5
         # Allocating Agent's next best position as received from policy function of the Utility State:
         gVar.agentPos = getToState
-        preyPredatorMovement()
+
+        ## Add checkstate condition
+        if currAgentPos == currPredatorPos and currAgentPos == currPreyPos:
+            # return 2
+            return (2, statesTaken, prediction)
+        elif currAgentPos == currPredatorPos:
+            # return -1
+            return (1, statesTaken, prediction)
+        elif currAgentPos == currPreyPos:
+            # return 1
+            return (0, statesTaken, prediction)
+
+        #preyPredatorMovement()
+        preyMovement()
+        ## Add checkstate condition
+        if currAgentPos == currPredatorPos and currAgentPos == currPreyPos:
+            # return 2
+            return (2, statesTaken, prediction)
+        elif currAgentPos == currPredatorPos:
+            # return -1
+            return (1, statesTaken, prediction)
+        elif currAgentPos == currPreyPos:
+            # return 1
+            return (0, statesTaken, prediction)
+
+        predatorMovement()
         prediction.append(getToState)
         statesTaken.append(((gVar.agentPos, gVar.prey.getCurrNode(), gVar.predator.getCurrNode())))
         if currAgentPos == currPredatorPos and currAgentPos == currPreyPos:
@@ -237,6 +278,8 @@ def agentUsingUtility():
             return (0, statesTaken, prediction)
 
         tiebreaker += 1
+        # print("t ", tiebreaker) 
+        # print(showEntityPositions())
         # gVar.pre = getToState[0]
         # currPreyPos = gVar.prey.getCurrNode()
     return (-2, statesTaken, prediction)
@@ -269,6 +312,18 @@ def countIt(result):
     print('Count = ',count)
     print('res : ',res)
 
+#input data is dict.
+# OutputCSV: state, agentPos, preyPos, predPos, distOfAgPrey, distOfAgPredator, Utility
+# def writeToCSVForModel(data):
+#     with open('UtilitiesFinal.txt', 'w') as file:
+#         for i in data:
+#             dAgPy = gVar.g.breadthFirstSearch(i[0], i[1])[1]
+#             dAgPred = gVar.g.breadthFirstSearch(i[0], i[2])[1]
+#             file.write([i, i[0], i[1], i[2], dAgPy, dAgPred, data[i]])
+#             # file.write(str(i) , str(data[i]))
+#         file.close()
+#     # print("Successfully written to file {}", 'a_' + str(agentNo) + '.csv')
+#     print("Successfully written features to csv file.")
 
 if __name__=='__main__':
     gVar.g = gVar.Graph(gVar.size)
@@ -291,7 +346,7 @@ if __name__=='__main__':
     writeToFile(gVar.utilityAtTimeT, 'utilityAtTimeT')
     writeToFile(gVar.utilityOfNextAction, 'utilityOfNextAction')
     result = agentUsingUtilityLoop()
-    writeToCSV(gVar.utilityOfStates)
+    # writeToCSV(gVar.utilityOfStates)
     print('Result = ', result)
 
     countIt(result)
@@ -300,3 +355,5 @@ if __name__=='__main__':
     print('Start time : '+str(start_time))
     print('End time : '+str(end_time))
     print('Total time : '+str(end_time-start_time))
+
+    # writeToCSVForModel(gVar.utilityOfNextAction)

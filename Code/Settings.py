@@ -22,6 +22,10 @@ probabilityStateTransition = {}
 utilityOfNextAction = {}
 
 # Rewards
-rewardPrey = float(1)
-rewardPredator = - float(1000000)
+# rewardPrey = float(1)
+# rewardPredator = - float(1000000)
+# rewardNormal = - float(1)
+
+rewardPrey = float(0)
+rewardPredator = - float('inf')
 rewardNormal = - float(1)
