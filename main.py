@@ -8,6 +8,7 @@ import random
 # from Code.Graph import Graph
 from Code.customizedFunctions import *
 import Code.Settings as gVar
+import pickle
 
 
 
@@ -58,6 +59,16 @@ def calculateProbability():
         nextPredatorPos = gVar.g.getNextNodes(state[2])
         probPredator = {i:float(0) for i in nextPredatorPos}
         bfsResult = gVar.g.breadthFirstSearch(state[2], state[0])[0]  # Gets the path from Predator to Agent positions
+
+        #For each pred pos, go for BFS result
+        minBfsLen = 10000
+        minDistPredPos = []
+        for nextPred in nextPredatorPos:
+            bfsLength = gVar.g.breadthFirstSearch(nextPred, state[0])[1]  # Gets the path from Predator to Agent positions
+            if minBfsLen >= bfsLength:
+                minBfsLen = bfsLength
+                minDistPredPos.append(nextPred)
+
         if len(bfsResult) == 1:
             # If Predator and Agent Positions are the same, then bfs path will be 1 only. Adding current node in nextPredatorPos list.
             probPredator[state[2]] = float(0)
@@ -65,8 +76,9 @@ def calculateProbability():
         for nextPred in nextPredatorPos:
             if len(bfsResult) > 1:
                 # Adding 0.6 probability of predator going to the next node lying in BFS path to Agent
-                if nextPred == bfsResult[1]:
-                    probPredator[nextPred] += 0.6
+                # if nextPred == bfsResult[1]:
+                if nextPred in minDistPredPos:
+                    probPredator[nextPred] += 0.6 / len(minDistPredPos)
             elif len(bfsResult) == 1:
                 # Since Predator will be in same cell only in this condition, adding 0.6 probability to the current cell of the predator.
                 if nextPred == bfsResult[0]:
@@ -90,6 +102,20 @@ def calculateProbability():
             else:
                 gVar.probabilityStateTransition[state][nextState] = 0.0
 
+    for state in gVar.states:
+        nextStates = gVar.probabilityStateTransition[state]
+        sumOfNextStates = sum(nextStates.values())
+        if state[0] == state[1] or state[0] == state[2]:
+            neighbourCount = 1
+        else:
+            neighbourCount = len(gVar.g.getNextNodes(state[0])) + 1
+        if abs(sumOfNextStates-neighbourCount) > 0.0001:
+            print("Error")
+            # print(state)
+            # print(nextStates)
+            print(sumOfNextStates)
+            print(neighbourCount)
+            quit()
 
 def getUniqueActions(stateSpace):
     actions = set()
@@ -107,8 +133,8 @@ def getRewardOfState(stateS):
 
 def calculateUtility(prob, state):
     # return (prob * gVar.utilityAtTimeTMinus1[state])
-    val = getRewardOfState(state) + gVar.utilityAtTimeTMinus1[state]  #jn
-    # val = gVar.utilityAtTimeTMinus1[state]
+    # val = getRewardOfState(state) + gVar.utilityAtTimeTMinus1[state]  #jn
+    val = gVar.utilityAtTimeTMinus1[state]
     # print("utility ", val)
     if np.isnan(val):
         val = 0
@@ -131,9 +157,11 @@ def calculateOptimalUtility():
             if state[0] == state[2]:
                 gVar.utilityAtTimeT[state] = gVar.utilityAtTimeTMinus1[state]
                 gVar.utilityOfNextAction[state] = {state[0] : gVar.rewardPredator}
+                gVar.utilityAtTimeT[state] = gVar.rewardPredator
             elif state[0] == state[1]:
                 gVar.utilityAtTimeT[state] = gVar.utilityAtTimeTMinus1[state]
                 gVar.utilityOfNextAction[state] = {state[0] : gVar.rewardPrey}
+                gVar.utilityAtTimeT[state] = gVar.rewardPrey
             else:
                 # Get transition probability of all current cells
                 transitionProbsCurrentState = gVar.probabilityStateTransition[state]
@@ -149,11 +177,11 @@ def calculateOptimalUtility():
                     if (np.isnan(getRewardOfState(nextState) + calculateUtility(transitionProbsCurrentState[nextState], nextState))):
                         print("Check {0} {1} {2}", gVar.utilityOfNextAction[state][nextState[0]] , calculateUtility(transitionProbsCurrentState[nextState], nextState), getRewardOfState(nextState))
                         quit()
-                    gVar.utilityOfNextAction[state][nextState[0]] += getRewardOfState(nextState) + calculateUtility(transitionProbsCurrentState[nextState], nextState)    #jn
-                    # gVar.utilityOfNextAction[state][nextState[0]] += calculateUtility(transitionProbsCurrentState[nextState], nextState)
+                    # gVar.utilityOfNextAction[state][nextState[0]] += getRewardOfState(nextState) + calculateUtility(transitionProbsCurrentState[nextState], nextState)    #jn
+                    gVar.utilityOfNextAction[state][nextState[0]] += calculateUtility(transitionProbsCurrentState[nextState], nextState)
                 # Store optimal utility of time t in utilityAtTimeT
-                gVar.utilityAtTimeT[state] = max(gVar.utilityOfNextAction[state].values())
-                # gVar.utilityAtTimeT[state] = getRewardOfState(state) + max(gVar.utilityOfNextAction[state].values())
+                # gVar.utilityAtTimeT[state] = max(gVar.utilityOfNextAction[state].values())
+                gVar.utilityAtTimeT[state] = -1 + max(gVar.utilityOfNextAction[state].values())
         
         maxi = - float('inf')
         for st in gVar.utilityAtTimeT:
@@ -314,16 +342,18 @@ def countIt(result):
 
 #input data is dict.
 # OutputCSV: state, agentPos, preyPos, predPos, distOfAgPrey, distOfAgPredator, Utility
-# def writeToCSVForModel(data):
-#     with open('UtilitiesFinal.txt', 'w') as file:
-#         for i in data:
-#             dAgPy = gVar.g.breadthFirstSearch(i[0], i[1])[1]
-#             dAgPred = gVar.g.breadthFirstSearch(i[0], i[2])[1]
-#             file.write([i, i[0], i[1], i[2], dAgPy, dAgPred, data[i]])
-#             # file.write(str(i) , str(data[i]))
-#         file.close()
-#     # print("Successfully written to file {}", 'a_' + str(agentNo) + '.csv')
-#     print("Successfully written features to csv file.")
+def writeToCSVForModel(data):
+    with open('Data/UtilitiesFinal.csv', 'w', newline = '') as file:
+        writer = csv.writer(file, delimiter=',')
+        writer.writerow(['State', 'AgentPos', 'PreyPos', 'PredPos', 'AgentPreyDist', 'AgentPredDist', 'Utility'])
+        for i in data:
+            dAgPy = gVar.g.breadthFirstSearch(i[0], i[1])[1]
+            dAgPred = gVar.g.breadthFirstSearch(i[0], i[2])[1]
+            writer.writerow([i, i[0], i[1], i[2], dAgPy, dAgPred, max(data[i].values())])
+            # file.write(str(i) , str(data[i]))
+        file.close()
+        # print("Successfully written to file {}", 'a_' + str(agentNo) + '.csv')
+    print("Successfully written features to csv file.")
 
 if __name__=='__main__':
     gVar.g = gVar.Graph(gVar.size)
@@ -340,11 +370,11 @@ if __name__=='__main__':
     # print('Count neighborsOfState : ',len(neighborsOfState))
 
     calculateProbability()
-    writeToFile(gVar.probabilityStateTransition, 'ProbabilityStateTransition')
+    writeToFile(gVar.probabilityStateTransition, 'Data/ProbabilityStateTransition')
     calculateOptimalUtility()
-    writeToFile(gVar.utilityAtTimeTMinus1, 'utilityAtTimeTMinus1')
-    writeToFile(gVar.utilityAtTimeT, 'utilityAtTimeT')
-    writeToFile(gVar.utilityOfNextAction, 'utilityOfNextAction')
+    writeToFile(gVar.utilityAtTimeTMinus1, 'Data/utilityAtTimeTMinus1')
+    writeToFile(gVar.utilityAtTimeT, 'Data/utilityAtTimeT')
+    writeToFile(gVar.utilityOfNextAction, 'Data/utilityOfNextAction')
     result = agentUsingUtilityLoop()
     # writeToCSV(gVar.utilityOfStates)
     print('Result = ', result)
@@ -356,4 +386,8 @@ if __name__=='__main__':
     print('End time : '+str(end_time))
     print('Total time : '+str(end_time-start_time))
 
-    # writeToCSVForModel(gVar.utilityOfNextAction)
+    writeToCSVForModel(gVar.utilityOfNextAction)
+
+    mat = gVar.g.adjMatrix
+    with open('Data/graph2.pickle', 'wb') as f:
+	    pickle.dump(mat, f)

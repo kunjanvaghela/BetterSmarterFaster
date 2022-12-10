@@ -27,5 +27,5 @@ utilityOfNextAction = {}
 # rewardNormal = - float(1)
 
 rewardPrey = float(0)
-rewardPredator = - float('inf')
-rewardNormal = - float(1)
+rewardPredator = -float('inf')
+rewardNormal = -float(1)
