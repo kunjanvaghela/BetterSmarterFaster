@@ -19,3 +19,7 @@ ProbabilityStateTransition1.txt
 utilityAtTimeTMinus1.txt
 utilityOfNextAction.txt
 utilityAtTimeT.txt
+Data/graph2.pickle
+Data/UtilitiesFinal1.csv
+Data/UtilitiesFinalUPartial.csv
+.DS_Store

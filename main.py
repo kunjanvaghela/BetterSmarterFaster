@@ -8,6 +8,7 @@ import random
 # from Code.Graph import Graph
 from Code.customizedFunctions import *
 import Code.Settings as gVar
+import pickle
 
 
 
@@ -350,6 +351,18 @@ def policyOfUPartial(stateS):
     maxi = max(nextAction.values())
     for i in nextAction:
         if maxi == nextAction[i]:
+            predDist = len(bfsResult)
+            firstTerm = 0.
+            secondTerm = 0.
+            for preyP in gVar.preyStateBelief:
+                if gVar.preyStateBelief[preyP] != 0:
+                    preySPath = gVar.g.breadthFirstSearch(preyP, agentPos)[1]
+                    firstTerm += preySPath * gVar.preyStateBelief[preyP]
+                    if preySPath < 1:
+                        secondTerm += gVar.preyStateBelief[preyP]
+                    else:
+                        secondTerm += gVar.preyStateBelief[preyP] / preySPath
+            gVar.dataForUPartialAgent.append([stateS, agentPos, predatorPos, predDist, firstTerm, secondTerm, nextAction[i]])
             return i
 
 
@@ -458,16 +471,25 @@ def countIt(result):
 
 #input data is dict.
 # OutputCSV: state, agentPos, preyPos, predPos, distOfAgPrey, distOfAgPredator, Utility
-# def writeToCSVForModel(data):
-#     with open('UtilitiesFinal.txt', 'w') as file:
-#         for i in data:
-#             dAgPy = gVar.g.breadthFirstSearch(i[0], i[1])[1]
-#             dAgPred = gVar.g.breadthFirstSearch(i[0], i[2])[1]
-#             file.write([i, i[0], i[1], i[2], dAgPy, dAgPred, data[i]])
-#             # file.write(str(i) , str(data[i]))
-#         file.close()
-#     # print("Successfully written to file {}", 'a_' + str(agentNo) + '.csv')
-#     print("Successfully written features to csv file.")
+def writeToCSVForModel(data, uPartialData = 0):
+    with open('Data/UtilitiesFinal.csv', 'w', newline = '') as file:
+        writer = csv.writer(file, delimiter=',')
+        if uPartialData == 0:
+            writer.writerow(['State', 'AgentPos', 'PreyPos', 'PredPos', 'AgentPreyDist', 'AgentPredDist', 'Utility'])
+            for i in data:
+                dAgPy = gVar.g.breadthFirstSearch(i[0], i[1])[1]
+                dAgPred = gVar.g.breadthFirstSearch(i[0], i[2])[1]
+                writer.writerow([i, i[0], i[1], i[2], dAgPy, dAgPred, max(data[i].values())])
+                # file.write(str(i) , str(data[i]))
+        else:
+            writer.writerow(['State', 'AgentPos', 'PredatorPos', 'AgentPredatorDis', 'SumOfPyProbMulPyDist', 'SumOfPyProbDivPyDist', 'UPartial'])
+            for i in data:
+                writer.writerow([i[0], i[1], i[2], i[3], i[4], i[5], i[6]])
+                # file.write(str(i) , str(data[i]))
+        file.close()
+        # print("Successfully written to file {}", 'a_' + str(agentNo) + '.csv')
+    print("Successfully written features to csv file.")
+
 
 if __name__=='__main__':
     gVar.g = gVar.Graph(gVar.size)
@@ -503,4 +525,9 @@ if __name__=='__main__':
     print('End time : '+str(end_time))
     print('Total time : '+str(end_time-start_time))
 
-    # writeToCSVForModel(gVar.utilityOfNextAction)
+    writeToCSVForModel(gVar.utilityOfNextAction)
+    writeToCSVForModel(gVar.dataForUPartialAgent, uPartialData= 1)
+
+    mat = gVar.g.adjMatrix
+    with open('Data/graph2.pickle', 'wb') as f:
+	    pickle.dump(mat, f)
