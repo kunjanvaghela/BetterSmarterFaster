@@ -23,3 +23,8 @@ Data/graph2.pickle
 Data/UtilitiesFinal1.csv
 Data/UtilitiesFinalUPartial.csv
 .DS_Store
+Data/UtilitiesFinal.csv
+ImportData/UtilitiesFinal.csv
+.gitignore
+ImportData/graph4.pickle
+try2.py

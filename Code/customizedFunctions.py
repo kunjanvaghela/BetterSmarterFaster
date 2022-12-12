@@ -1,6 +1,7 @@
 import random
 import Code.Settings as gVar
 import csv
+import pickle
 
 
 # Setting the Prey belief:
@@ -36,8 +37,34 @@ def fetchFirstTupleElement(nodes):
     return res
 
 # Function to create the Tree
-def create_env():
-    gVar.g.randomLinkandEdges()
+def create_env(newEnv = 0):
+    if newEnv == 0:
+        gVar.g.randomLinkandEdges()
+    else:
+        with open('/Users/kunjanvaghela/Projects/Project 3 Better Smarter Faster/BetterSmarterFaster/ImportData/graph4.pickle', 'rb') as f:
+            dataG = pickle.load(f)
+        gVar.g.importFromData(dataG)
+
+def populateUtilityAtTimeT():
+    with open('/Users/kunjanvaghela/Projects/Project 3 Better Smarter Faster/BetterSmarterFaster/ImportData/UtilitiesFinal.csv', newline='') as f:
+        reader = csv.reader(f)
+        i = 0
+        for row in reader:
+            # print(row)
+            if i > 0:
+                # gVar.utilityAtTimeT[row[0]] = row[6]
+                print(type(row[0]))
+                # row0 = list(row[0])
+                # csv_list = [[val.strip() for val in r.split(",")] for r in f.readlines()]
+                gVar.utilityAtTimeT[(int(row[1]),int(row[2]),int(row[3]))] = float(row[6])
+                # csv_list = [val for val in row[0].split(",")]
+                # for r in len(csv_list):
+                #     # if row0[r]
+                #     csv_list[r] = int(csv_list[r][1])
+                pass
+            i += 1
+
+
 
 # Spawns Prey, Predator and Agent. Prey and Predator are spawned randomly, while Agent is spawned in any place other than Prey and Predator
 def placeEntities(g):

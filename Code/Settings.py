@@ -21,6 +21,7 @@ utilityAtTimeTMinus1 = {}
 probabilityStateTransition = {}
 utilityOfNextAction = {}
 dataForUPartialAgent = []
+newEnv = 1
 
 # Rewards
 # rewardPrey = float(1)

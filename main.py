@@ -499,23 +499,26 @@ if __name__=='__main__':
     # print(gVar.states)
     # print(len(gVar.states))
 
-    create_env()
-    calculateProbability()
-    writeToFile(gVar.probabilityStateTransition, 'ProbabilityStateTransition')
-    calculateOptimalUtility()
-    writeToFile(gVar.utilityAtTimeTMinus1, 'utilityAtTimeTMinus1')
-    writeToFile(gVar.utilityAtTimeT, 'utilityAtTimeT')
-    writeToFile(gVar.utilityOfNextAction, 'utilityOfNextAction')
-    result = agentUsingUtilityLoop()
-    # writeToCSV(gVar.utilityOfStates)
-    # print('Result = ', result)
-    print('Count It function called for Agent using utility function.')
-    countIt(result)
+    create_env(newEnv=gVar.newEnv)
+    if gVar.newEnv == 0:
+        calculateProbability()
+        writeToFile(gVar.probabilityStateTransition, 'ProbabilityStateTransition')
+        calculateOptimalUtility()
+        writeToFile(gVar.utilityAtTimeTMinus1, 'utilityAtTimeTMinus1')
+        writeToFile(gVar.utilityAtTimeT, 'utilityAtTimeT')
+        writeToFile(gVar.utilityOfNextAction, 'utilityOfNextAction')
+        result = agentUsingUtilityLoop()
+        # writeToCSV(gVar.utilityOfStates)
+        # print('Result = ', result)
+        print('Count It function called for Agent using utility function.')
+        countIt(result)
+    else:
+        populateUtilityAtTimeT()
 
     ## U Partial Agent
     resultUPartial = agentUPartialLoop()
     # writeToCSV(gVar.utilityOfStates)
-    # print('Result UPartial = ', resultUPartial)
+    print('Result UPartial = ', resultUPartial)
 
     print('Count It function called for Partial Utility Agent.')
     countIt(resultUPartial)
@@ -525,8 +528,8 @@ if __name__=='__main__':
     print('End time : '+str(end_time))
     print('Total time : '+str(end_time-start_time))
 
-    writeToCSVForModel(gVar.utilityOfNextAction)
-    writeToCSVForModel(gVar.dataForUPartialAgent, uPartialData= 1)
+    # writeToCSVForModel(gVar.utilityOfNextAction)
+    # writeToCSVForModel(gVar.dataForUPartialAgent, uPartialData= 1)
 
     mat = gVar.g.adjMatrix
     with open('Data/graph2.pickle', 'wb') as f:

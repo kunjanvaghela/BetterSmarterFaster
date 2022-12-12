@@ -88,6 +88,9 @@ class Graph(object):
             if(self.checkdegree(i)<3):
                 self.add_randomEdge(i)
     
+    def importFromData(self, data):
+        self.adjMatrix = data
+    
     # returns a random node, this is used to get random nodes to spawn Prey and Predator
     def getRandomNode(self):
         return random.choice(range(self.size))
