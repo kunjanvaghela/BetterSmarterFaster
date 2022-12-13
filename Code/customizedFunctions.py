@@ -41,12 +41,13 @@ def create_env(newEnv = 0):
     if newEnv == 0:
         gVar.g.randomLinkandEdges()
     else:
-        with open('/Users/kunjanvaghela/Projects/Project 3 Better Smarter Faster/BetterSmarterFaster/ImportData/graph4.pickle', 'rb') as f:
+        with open('/Users/mitulshah/Desktop/AI Project3/graph4.pickle', 'rb') as f:
             dataG = pickle.load(f)
         gVar.g.importFromData(dataG)
 
-def populateUtilityAtTimeT():
-    with open('/Users/kunjanvaghela/Projects/Project 3 Better Smarter Faster/BetterSmarterFaster/ImportData/UtilitiesFinal.csv', newline='') as f:
+def populateUtilityAtTimeT(vModel=0):
+    # with open('/Users/kunjanvaghela/Projects/Project 3 Better Smarter Faster/BetterSmarterFaster/ImportData/UtilitiesFinal.csv', newline='') as f:
+    with open('/Users/mitulshah/Desktop/AI Project3/VModelOutput2_NoIndex.csv', newline='') as f:
         reader = csv.reader(f)
         i = 0
         for row in reader:
@@ -60,8 +61,35 @@ def populateUtilityAtTimeT():
                 #     csv_list[r] = int(csv_list[r][1])
                 pass
             i += 1
+    f.close()
 
+    if vModel == 1:
+        print(vModel)
+        for i in range(gVar.size):
+            for j in range(gVar.size):
+                for k in range(gVar.size):
+                    # gVar.states.append((i,j,k))
+                    # gVar.utilityOfNextAction[(i,j,k)] = {}
+                    if i == k:
+                        gVar.utilityAtTimeT[(i,j,k)] = -float('inf')
+                    elif i == j:
+                        gVar.utilityAtTimeT[(i,j,k)] = 0.
+                    elif k in gVar.g.getNextNodes(i):
+                        gVar.utilityAtTimeT[(i,j,k)] = -float('inf')
 
+        #Read other Utility values from oldFile.
+        with open('/Users/mitulshah/Desktop/AI Project3/UtilitiesFinal.csv', newline='') as f2:
+            reader2 = csv.reader(f2)
+            i = 0
+            for row in reader2:
+                # print(row)
+                if i > 0:
+                    if float(row[6]) == float('-inf') or row[6] == 0.:
+                        gVar.utilityAtTimeT[(int(row[1]),int(row[2]),int(row[3]))] = float(row[6])
+                i += 1
+        f2.close()
+
+    gVar.utilityAtTimeTMinus1 = gVar.utilityAtTimeT.copy()
 
 # Spawns Prey, Predator and Agent. Prey and Predator are spawned randomly, while Agent is spawned in any place other than Prey and Predator
 def placeEntities(g):

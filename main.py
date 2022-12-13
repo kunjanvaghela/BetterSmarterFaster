@@ -226,12 +226,12 @@ def getNextActionFromOptimalUtility():
             # Calculating optimal utility
             for nextState in transitionProbsCurrentState.keys():
                 # print("so far ", gVar.utilityOfNextAction[state][nextState[0]])
-                if (np.isnan(gVar.utilityOfNextAction[state][nextState[0]])):
-                    print("It's nan ")
-                    quit()
-                if (np.isnan(getRewardOfState(nextState) + calculateUtility(transitionProbsCurrentState[nextState], nextState))):
-                    print("Check {0} {1} {2}", gVar.utilityOfNextAction[state][nextState[0]] , calculateUtility(transitionProbsCurrentState[nextState], nextState), getRewardOfState(nextState))
-                    quit()
+                # if (np.isnan(gVar.utilityOfNextAction[state][nextState[0]])):
+                #     print("It's nan ")
+                #     quit()
+                # if (np.isnan(getRewardOfState(nextState) + calculateUtility(transitionProbsCurrentState[nextState], nextState))):
+                #     print("Check {0} {1} {2}", gVar.utilityOfNextAction[state][nextState[0]] , calculateUtility(transitionProbsCurrentState[nextState], nextState), getRewardOfState(nextState))
+                #     quit()
                 # gVar.utilityOfNextAction[state][nextState[0]] += getRewardOfState(nextState) + calculateUtility(transitionProbsCurrentState[nextState], nextState)    #jn
                 gVar.utilityOfNextAction[state][nextState[0]] += calculateUtility(transitionProbsCurrentState[nextState], nextState)
 
@@ -573,7 +573,8 @@ if __name__=='__main__':
         # writeToFile(gVar.utilityOfNextAction, 'utilityOfNextAction')
         # writeToCSV(gVar.utilityOfStates)
     else:
-        populateUtilityAtTimeT()
+        populateUtilityAtTimeT(gVar.vModel)
+        # print(len(gVar.utilityAtTimeT))
         calculateProbability()
         getNextActionFromOptimalUtility()
 
@@ -586,21 +587,21 @@ if __name__=='__main__':
     
 
     ## U Partial Agent
-    resultUPartial = agentUPartialLoop()
-    # writeToCSV(gVar.utilityOfStates)
-    print('Result UPartial = ', resultUPartial)
+    # resultUPartial = agentUPartialLoop()
+    # # writeToCSV(gVar.utilityOfStates)
+    # print('Result UPartial = ', resultUPartial)
 
-    print('Count It function called for Partial Utility Agent.')
-    countIt(resultUPartial)
+    # print('Count It function called for Partial Utility Agent.')
+    # countIt(resultUPartial)
 
-    end_time = datetime.datetime.now()
-    print('Start time : '+str(start_time))
-    print('End time : '+str(end_time))
-    print('Total time : '+str(end_time-start_time))
+    # end_time = datetime.datetime.now()
+    # print('Start time : '+str(start_time))
+    # print('End time : '+str(end_time))
+    # print('Total time : '+str(end_time-start_time))
 
     # writeToCSVForModel(gVar.utilityOfNextAction)
     # writeToCSVForModel(gVar.dataForUPartialAgent, uPartialData= 1)
 
-    mat = gVar.g.adjMatrix
-    with open('Data/graph2.pickle', 'wb') as f:
-	    pickle.dump(mat, f)
+    # mat = gVar.g.adjMatrix
+    # with open('Data/graph2.pickle', 'wb') as f:
+	#     pickle.dump(mat, f)

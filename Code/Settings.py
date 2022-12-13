@@ -22,6 +22,7 @@ probabilityStateTransition = {}
 utilityOfNextAction = {}
 dataForUPartialAgent = []
 newEnv = 1
+vModel = 1
 
 # Rewards
 # rewardPrey = float(1)
