@@ -28,3 +28,4 @@ ImportData/UtilitiesFinal.csv
 .gitignore
 ImportData/graph4.pickle
 try2.py
+ResultOfUtilityAgent.txt

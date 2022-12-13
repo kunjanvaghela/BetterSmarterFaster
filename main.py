@@ -26,9 +26,9 @@ def initializeRewardOfStateS():
     # Initializes reward of being in a particular state
     for s in gVar.states:
         gVar.utilityAtTimeTMinus1[s] = {}
-        reward = getRewardOfState(s)
-        gVar.utilityAtTimeTMinus1[s] = reward
-        # gVar.utilityAtTimeTMinus1[s] = 0.     # reward
+        # reward = getRewardOfState(s)
+        # gVar.utilityAtTimeTMinus1[s] = reward
+        gVar.utilityAtTimeTMinus1[s] = 0.     # reward
 
 # Inputs : Base State, uPartialNextStates: 0 - For normal agent, 1 - For agent with U Partial setting
 # Returns : List of next states possible from the input base state
@@ -63,6 +63,16 @@ def calculateProbability():
         nextPredatorPos = gVar.g.getNextNodes(state[2])
         probPredator = {i:float(0) for i in nextPredatorPos}
         bfsResult = gVar.g.breadthFirstSearch(state[2], state[0])[0]  # Gets the path from Predator to Agent positions
+        
+        #For each pred pos, go for BFS result       ## Changes by M from 0.31
+        minBfsLen = 10000
+        minDistPredPos = []
+        for nextPred in nextPredatorPos:
+            bfsLength = gVar.g.breadthFirstSearch(nextPred, state[0])[1]  # Gets the path from Predator to Agent positions
+            if minBfsLen >= bfsLength:
+                minBfsLen = bfsLength
+                minDistPredPos.append(nextPred)
+        
         if len(bfsResult) == 1:
             # If Predator and Agent Positions are the same, then bfs path will be 1 only. Adding current node in nextPredatorPos list.
             probPredator[state[2]] = float(0)
@@ -70,8 +80,9 @@ def calculateProbability():
         for nextPred in nextPredatorPos:
             if len(bfsResult) > 1:
                 # Adding 0.6 probability of predator going to the next node lying in BFS path to Agent
-                if nextPred == bfsResult[1]:
-                    probPredator[nextPred] += 0.6
+                # if nextPred == bfsResult[1]:      ## Changes by M from 0.31
+                if nextPred in minDistPredPos:      ## Changes by M from 0.31
+                    probPredator[nextPred] += 0.6 / len(minDistPredPos) ## Changes by M from 0.31
             elif len(bfsResult) == 1:
                 # Since Predator will be in same cell only in this condition, adding 0.6 probability to the current cell of the predator.
                 if nextPred == bfsResult[0]:
@@ -94,6 +105,22 @@ def calculateProbability():
                 gVar.probabilityStateTransition[state][nextState] = (probPrey[nextState[1]] * probPredator[nextState[2]])
             else:
                 gVar.probabilityStateTransition[state][nextState] = 0.0
+        
+    ## Changes by M from 0.31
+    for state in gVar.states:
+        nextStates = gVar.probabilityStateTransition[state]
+        sumOfNextStates = sum(nextStates.values())
+        if state[0] == state[1] or state[0] == state[2]:
+            neighbourCount = 1
+        else:
+            neighbourCount = len(gVar.g.getNextNodes(state[0])) + 1
+        if abs(sumOfNextStates-neighbourCount) > 0.0001:
+            print("Error")
+            # print(state)
+            # print(nextStates)
+            print(sumOfNextStates)
+            print(neighbourCount)
+            quit()
 
 # To get the next unique actions from current possible state spaces
 def getUniqueActions(stateSpace):
@@ -114,8 +141,8 @@ def getRewardOfState(stateS):
 # Returns (probability of getting to the given state) * (utility of the given state at T Minus 1)
 def calculateUtility(prob, state):
     # return (prob * gVar.utilityAtTimeTMinus1[state])
-    val = getRewardOfState(state) + gVar.utilityAtTimeTMinus1[state]  #jn
-    # val = gVar.utilityAtTimeTMinus1[state]
+    # val = getRewardOfState(state) + gVar.utilityAtTimeTMinus1[state]  ## Changes by M from 0.31
+    val = gVar.utilityAtTimeTMinus1[state]                              ## Changes by M from 0.31
     if np.isnan(val):
         val = 0
     # return (prob * (getRewardOfState(state) + gVar.utilityAtTimeTMinus1[state]))
@@ -136,9 +163,18 @@ def calculateOptimalUtility():
             if state[0] == state[2]:
                 gVar.utilityAtTimeT[state] = gVar.utilityAtTimeTMinus1[state]
                 gVar.utilityOfNextAction[state] = {state[0] : gVar.rewardPredator}
+                gVar.utilityAtTimeT[state] = gVar.rewardPredator                    ## Changes by M from 0.31
+                # gVar.utilityAtTimeTMinus1[state] = gVar.rewardPredator            ## Changes by M from 0.31
             elif state[0] == state[1]:
                 gVar.utilityAtTimeT[state] = gVar.utilityAtTimeTMinus1[state]
                 gVar.utilityOfNextAction[state] = {state[0] : gVar.rewardPrey}
+                gVar.utilityAtTimeT[state] = gVar.rewardPrey                ## Changes by M from 0.31 ...
+                # gVar.utilityAtTimeTMinus1[state] = gVar.rewardPrey
+            elif state[2] in gVar.g.getNextNodes(state[0]):
+                gVar.utilityAtTimeT[state] = gVar.utilityAtTimeTMinus1[state]
+                gVar.utilityOfNextAction[state] = {state[0] : gVar.rewardPredator}
+                gVar.utilityAtTimeT[state] = gVar.rewardPredator
+                # gVar.utilityAtTimeTMinus1[state] = gVar.rewardPrey            ## ... Changes by M from 0.31
             else:
                 # Get transition probability of all current cells
                 transitionProbsCurrentState = gVar.probabilityStateTransition[state]
@@ -154,11 +190,11 @@ def calculateOptimalUtility():
                     if (np.isnan(getRewardOfState(nextState) + calculateUtility(transitionProbsCurrentState[nextState], nextState))):
                         print("Check {0} {1} {2}", gVar.utilityOfNextAction[state][nextState[0]] , calculateUtility(transitionProbsCurrentState[nextState], nextState), getRewardOfState(nextState))
                         quit()
-                    gVar.utilityOfNextAction[state][nextState[0]] += getRewardOfState(nextState) + calculateUtility(transitionProbsCurrentState[nextState], nextState)    #jn
-                    # gVar.utilityOfNextAction[state][nextState[0]] += calculateUtility(transitionProbsCurrentState[nextState], nextState)
+                    # gVar.utilityOfNextAction[state][nextState[0]] += getRewardOfState(nextState) + calculateUtility(transitionProbsCurrentState[nextState], nextState)    #jn
+                    gVar.utilityOfNextAction[state][nextState[0]] += calculateUtility(transitionProbsCurrentState[nextState], nextState)
                 # Store optimal utility of time t in utilityAtTimeT
-                gVar.utilityAtTimeT[state] = max(gVar.utilityOfNextAction[state].values())
-                # gVar.utilityAtTimeT[state] = getRewardOfState(state) + max(gVar.utilityOfNextAction[state].values())
+                # gVar.utilityAtTimeT[state] = max(gVar.utilityOfNextAction[state].values())                        ## Changes by M from 0.31
+                gVar.utilityAtTimeT[state] = gVar.rewardNormal + max(gVar.utilityOfNextAction[state].values())      ## Changes by M from 0.31
         maxi = - float('inf')
         for st in gVar.utilityAtTimeT:
             diff = abs(gVar.utilityAtTimeT[st] - gVar.utilityAtTimeTMinus1[st])
@@ -170,6 +206,34 @@ def calculateOptimalUtility():
             break
         i += 1
 
+# To calculate nextAction for Utility Function from imported data
+def getNextActionFromOptimalUtility():
+    statesToCheck = gVar.states
+    gVar.utilityAtTimeTMinus1 = gVar.utilityAtTimeT.copy()
+    for state in statesToCheck:
+        if state[0] == state[2]:
+            gVar.utilityOfNextAction[state] = {state[0] : gVar.rewardPredator}
+        elif state[0] == state[1]:
+            gVar.utilityOfNextAction[state] = {state[0] : gVar.rewardPrey}
+        elif state[2] in gVar.g.getNextNodes(state[0]):
+            gVar.utilityOfNextAction[state] = {state[0] : gVar.rewardPredator}
+        else:
+            # Get transition probability of all current cells
+            transitionProbsCurrentState = gVar.probabilityStateTransition[state]
+            # Get all the possible next states of the agent
+            nextActionPositions = getUniqueActions(transitionProbsCurrentState)
+            gVar.utilityOfNextAction[state] = {nextAction: 0. for nextAction in nextActionPositions}
+            # Calculating optimal utility
+            for nextState in transitionProbsCurrentState.keys():
+                # print("so far ", gVar.utilityOfNextAction[state][nextState[0]])
+                if (np.isnan(gVar.utilityOfNextAction[state][nextState[0]])):
+                    print("It's nan ")
+                    quit()
+                if (np.isnan(getRewardOfState(nextState) + calculateUtility(transitionProbsCurrentState[nextState], nextState))):
+                    print("Check {0} {1} {2}", gVar.utilityOfNextAction[state][nextState[0]] , calculateUtility(transitionProbsCurrentState[nextState], nextState), getRewardOfState(nextState))
+                    quit()
+                # gVar.utilityOfNextAction[state][nextState[0]] += getRewardOfState(nextState) + calculateUtility(transitionProbsCurrentState[nextState], nextState)    #jn
+                gVar.utilityOfNextAction[state][nextState[0]] += calculateUtility(transitionProbsCurrentState[nextState], nextState)
 
 # To get max value from the utility function                --- Can remove
 def getMaxValueFromState(stateS):
@@ -218,13 +282,13 @@ def agentUsingUtility():
         currPreyPos = gVar.prey.getCurrNode()
         if currAgentPos == currPredatorPos and currAgentPos == currPreyPos:
             # return 2
-            return (2, statesTaken, prediction)
+            return [2, statesTaken, prediction, tiebreaker]
         elif currAgentPos == currPredatorPos:
             # return -1
-            return (1, statesTaken, prediction)
+            return [1, statesTaken, prediction, tiebreaker]
         elif currAgentPos == currPreyPos:
             # return 1
-            return (0, statesTaken, prediction)
+            return [0, statesTaken, prediction, tiebreaker]
         getToState = policyOfUtility((currAgentPos, currPreyPos, currPredatorPos))
         # Checks to see if getToState is correct.        
         nextAgentPositions = gVar.g.getNextNodes(currAgentPos)
@@ -241,46 +305,46 @@ def agentUsingUtility():
         ## Add checkstate condition
         if currAgentPos == currPredatorPos and currAgentPos == currPreyPos:
             # return 2
-            return (2, statesTaken, prediction)
+            return [2, statesTaken, prediction, tiebreaker]
         elif currAgentPos == currPredatorPos:
             # return -1
-            return (1, statesTaken, prediction)
+            return [1, statesTaken, prediction, tiebreaker]
         elif currAgentPos == currPreyPos:
             # return 1
-            return (0, statesTaken, prediction)
+            return [0, statesTaken, prediction, tiebreaker]
 
         #preyPredatorMovement()
         preyMovement()
         ## Add checkstate condition
         if currAgentPos == currPredatorPos and currAgentPos == currPreyPos:
             # return 2
-            return (2, statesTaken, prediction)
+            return [2, statesTaken, prediction, tiebreaker]
         elif currAgentPos == currPredatorPos:
             # return -1
-            return (1, statesTaken, prediction)
+            return [1, statesTaken, prediction, tiebreaker]
         elif currAgentPos == currPreyPos:
             # return 1
-            return (0, statesTaken, prediction)
+            return [0, statesTaken, prediction, tiebreaker]
 
         predatorMovement()
         prediction.append(getToState)
         statesTaken.append(((gVar.agentPos, gVar.prey.getCurrNode(), gVar.predator.getCurrNode())))
         if currAgentPos == currPredatorPos and currAgentPos == currPreyPos:
             # return 2
-            return (2, statesTaken, prediction)
+            return [2, statesTaken, prediction, tiebreaker]
         elif currAgentPos == currPredatorPos:
             # return -1
-            return (1, statesTaken, prediction)
+            return [1, statesTaken, prediction, tiebreaker]
         elif currAgentPos == currPreyPos:
             # return 1
-            return (0, statesTaken, prediction)
+            return [0, statesTaken, prediction, tiebreaker]
 
         tiebreaker += 1
         # print("t ", tiebreaker) 
         # print(showEntityPositions())
         # gVar.pre = getToState[0]
         # currPreyPos = gVar.prey.getCurrNode()
-    return (-2, statesTaken, prediction)
+    return [-2, statesTaken, prediction, tiebreaker]
 
 
 # To perform multiple Agent run by using Utilify Function
@@ -382,13 +446,13 @@ def agentUPartial():
         currPreyPos = gVar.prey.getCurrNode()
         if currAgentPos == currPredatorPos and currAgentPos == currPreyPos:
             # return 2
-            return (2, statesTaken, prediction)
+            return [2, statesTaken, prediction, tiebreaker]
         elif currAgentPos == currPredatorPos:
             # return -1
-            return (1, statesTaken, prediction)
+            return [1, statesTaken, prediction, tiebreaker]
         elif currAgentPos == currPreyPos:
             # return 1
-            return (0, statesTaken, prediction)
+            return [0, statesTaken, prediction, tiebreaker]
 
         getToState = policyOfUPartial((currAgentPos, currPredatorPos))
         # Checks to see if getToState is correct.        
@@ -406,26 +470,26 @@ def agentUPartial():
         ## Add checkstate condition
         if currAgentPos == currPredatorPos and currAgentPos == currPreyPos:
             # return 2
-            return (2, statesTaken, prediction)
+            return [2, statesTaken, prediction, tiebreaker]
         elif currAgentPos == currPredatorPos:
             # return -1
-            return (1, statesTaken, prediction)
+            return [1, statesTaken, prediction, tiebreaker]
         elif currAgentPos == currPreyPos:
             # return 1
-            return (0, statesTaken, prediction)
+            return [0, statesTaken, prediction, tiebreaker]
 
         #preyPredatorMovement()
         preyMovement()
         ## Add checkstate condition
         if currAgentPos == currPredatorPos and currAgentPos == currPreyPos:
             # return 2
-            return (2, statesTaken, prediction)
+            return [2, statesTaken, prediction, tiebreaker]
         elif currAgentPos == currPredatorPos:
             # return -1
-            return (1, statesTaken, prediction)
+            return [1, statesTaken, prediction, tiebreaker]
         elif currAgentPos == currPreyPos:
             # return 1
-            return (0, statesTaken, prediction)
+            return [0, statesTaken, prediction, tiebreaker]
         updateBelief(0)
 
         predatorMovement()
@@ -433,16 +497,16 @@ def agentUPartial():
         statesTaken.append((gVar.agentPos, gVar.preyStateBelief, gVar.predator.getCurrNode()))
         if currAgentPos == currPredatorPos and currAgentPos == currPreyPos:
             # return 2
-            return (2, statesTaken, prediction)
+            return [2, statesTaken, prediction, tiebreaker]
         elif currAgentPos == currPredatorPos:
             # return -1
-            return (1, statesTaken, prediction)
+            return [1, statesTaken, prediction, tiebreaker]
         elif currAgentPos == currPreyPos:
             # return 1
-            return (0, statesTaken, prediction)
+            return [0, statesTaken, prediction, tiebreaker]
 
         tiebreaker += 1
-    return (-2, statesTaken, prediction)
+    return [-2, statesTaken, prediction, tiebreaker]
 
 # Multiple agent run initialization for agent run based on U Partial
 def agentUPartialLoop():
@@ -502,18 +566,24 @@ if __name__=='__main__':
     create_env(newEnv=gVar.newEnv)
     if gVar.newEnv == 0:
         calculateProbability()
-        writeToFile(gVar.probabilityStateTransition, 'ProbabilityStateTransition')
+        # writeToFile(gVar.probabilityStateTransition, 'ProbabilityStateTransition')
         calculateOptimalUtility()
-        writeToFile(gVar.utilityAtTimeTMinus1, 'utilityAtTimeTMinus1')
-        writeToFile(gVar.utilityAtTimeT, 'utilityAtTimeT')
-        writeToFile(gVar.utilityOfNextAction, 'utilityOfNextAction')
-        result = agentUsingUtilityLoop()
+        # writeToFile(gVar.utilityAtTimeTMinus1, 'utilityAtTimeTMinus1')
+        # writeToFile(gVar.utilityAtTimeT, 'utilityAtTimeT')
+        # writeToFile(gVar.utilityOfNextAction, 'utilityOfNextAction')
         # writeToCSV(gVar.utilityOfStates)
-        # print('Result = ', result)
-        print('Count It function called for Agent using utility function.')
-        countIt(result)
     else:
         populateUtilityAtTimeT()
+        calculateProbability()
+        getNextActionFromOptimalUtility()
+
+
+    result = agentUsingUtilityLoop()
+    # print('Result = ', result)
+    writeListToFile(result, 'ResultOfUtilityAgent')
+    print('Count It function called for Agent using utility function.')
+    countIt(result)
+    
 
     ## U Partial Agent
     resultUPartial = agentUPartialLoop()

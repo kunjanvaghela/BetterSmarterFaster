@@ -52,9 +52,6 @@ def populateUtilityAtTimeT():
         for row in reader:
             # print(row)
             if i > 0:
-                # gVar.utilityAtTimeT[row[0]] = row[6]
-                print(type(row[0]))
-                # row0 = list(row[0])
                 # csv_list = [[val.strip() for val in r.split(",")] for r in f.readlines()]
                 gVar.utilityAtTimeT[(int(row[1]),int(row[2]),int(row[3]))] = float(row[6])
                 # csv_list = [val for val in row[0].split(",")]
@@ -187,6 +184,15 @@ def writeToFile(data, filename):
     with open(filename, 'w') as file:
         for i in data:
             file.write(str(i)+' : '+(str(data[i]))+'\n')
+        file.close()
+    # print("Successfully written to file {}", 'a_' + str(agentNo) + '.csv')
+    print("Successfully written to file.")
+
+def writeListToFile(data, filename):
+    filename = str(filename + '.txt')
+    with open(filename, 'w') as file:
+        for i in data:
+            file.write(str(i)+'\n')
         file.close()
     # print("Successfully written to file {}", 'a_' + str(agentNo) + '.csv')
     print("Successfully written to file.")
