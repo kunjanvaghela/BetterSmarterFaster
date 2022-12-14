@@ -45,9 +45,9 @@ def create_env(newEnv = 0):
             dataG = pickle.load(f)
         gVar.g.importFromData(dataG)
 
-def populateUtilityAtTimeT(vModel=0):
+def populateUtilityAtTimeT(fileName, vModel=0):
     # with open('/Users/kunjanvaghela/Projects/Project 3 Better Smarter Faster/BetterSmarterFaster/ImportData/UtilitiesFinal.csv', newline='') as f:
-    with open('/Users/mitulshah/Desktop/AI Project3/VModelOutput2_NoIndex.csv', newline='') as f:
+    with open('/Users/mitulshah/Desktop/AI Project3/' + fileName, newline='') as f:
         reader = csv.reader(f)
         i = 0
         for row in reader:
@@ -224,6 +224,16 @@ def writeListToFile(data, filename):
         file.close()
     # print("Successfully written to file {}", 'a_' + str(agentNo) + '.csv')
     print("Successfully written to file.")
+
+def writeListToCSVFile(data, filename):
+    filename = str(filename + '.csv')
+    with open(filename, 'w', newline = '') as file:
+        writer = csv.writer(file, delimiter=',')
+        writer.writerow(['State', 'Steps', 'AgentStartingPosition'])
+        for i in data:
+            writer.writerow([i[0], i[1], i[2]])
+        file.close()
+    print("Successfully written output to csv file.")
 
 
 

@@ -8,7 +8,7 @@ size = 50
 predator = Predator()
 prey = Prey()
 agentPos = -1
-agentIterations = 10000
+agentIterations = 1000
 g = Graph(size)
 preyStateBelief, predatorStateBelief = {}, {}
 pointSystem = {}
@@ -22,7 +22,13 @@ probabilityStateTransition = {}
 utilityOfNextAction = {}
 dataForUPartialAgent = []
 newEnv = 1
-vModel = 1
+vModel = 1   #Or reading U* from existing file.
+# fileNameToReadUtility = 'UtilitiesFinal.csv'
+# fileNameToOutput = 'Agent_UStar_Result.csv'
+# fileNameToReadUtility = 'VModelOutput2_NoIndex.csv'
+# fileNameToOutput = 'Agent_VModel_Result.csv'
+fileNameToReadUtility = 'UtilitiesFinal.csv'
+fileNameToOutput = 'Agent_UPartial_Result.csv'
 
 # Rewards
 # rewardPrey = float(1)
