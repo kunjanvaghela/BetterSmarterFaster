@@ -27,8 +27,13 @@ vModel = 1   #Or reading U* from existing file.
 # fileNameToOutput = 'Agent_UStar_Result.csv'
 # fileNameToReadUtility = 'VModelOutput2_NoIndex.csv'
 # fileNameToOutput = 'Agent_VModel_Result.csv'
-fileNameToReadUtility = 'UtilitiesFinal.csv'
-fileNameToOutput = 'Agent_UPartial_Result.csv'
+# fileNameToReadUtility = 'UtilitiesFinal.csv'
+# fileNameToOutput = 'Agent_UPartial_Result.csv'
+
+# fileNameToReadUtility = 'UtilitiesFinal.csv'
+# fileNameToOutput = 'Agent_UPartial_Result.csv'
+fileNameToReadUtility = 'VModelOutput2_NoIndex.csv'
+fileNameToOutput = 'Agent_VPartial2_Result.csv'
 
 # Rewards
 # rewardPrey = float(1)
