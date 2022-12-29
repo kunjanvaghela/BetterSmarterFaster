@@ -1,4 +1,5 @@
 import random
+import Code.Settings as gVar
 
 class Predator:
     def __init__(self) -> None:
@@ -12,7 +13,7 @@ class Predator:
 
     # Predator moves towards the next node of the BFS path received
     # if easilyDistractedPredator = 0: predator will move in BFS path towards Agent, otherwise will move either randomly (0.4) or towards BFS path towards Agent (0.6)
-    def move(self, bfsPathReceived, easilyDistractedPredator = 0):
+    def move(self, bfsPathReceived, easilyDistractedPredator = 1):
         # print('Predator to Agent BFS Path : '+ str(bfsPathReceived))
         global g
         choice = random.random()
@@ -22,6 +23,6 @@ class Predator:
             elif len(bfsPathReceived) == 1:
                 self.currNode = bfsPathReceived[0]
         else:
-            nextNodes = g.getNextNodes(self.currNode)
+            nextNodes = gVar.g.getNextNodes(self.currNode)
             # nextNodes.append(self.currNode)
             self.currNode = random.choice(nextNodes)

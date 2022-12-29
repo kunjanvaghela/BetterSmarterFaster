@@ -3,6 +3,7 @@ import csv
 import networkx as nx
 
 from customizedFunctions import *
+from Settings import *
 
 
 
@@ -271,34 +272,22 @@ def agentCustomizedDefinedSteps(predatorPositionKnown = 0, preyMidStateBelief = 
     nearestPredatorNode, nearestPreyNode, farthestPredatorNode, farthestPreyNode, nextNodeAttributes = getNearestFarthestPreyPredator(g.getNextNodes(agentPos), predatorNode=predatorMaxPositionProbability)
     return random.choice(farthestPredatorNode)[0]
 
-def surveyLogic(preyPositionKnown = 0, predatorPositionKnown = 0, defectiveDrone = 0, beliefForFaultyDrone = 0):
-    global predatorFoundCounter, preyFoundCounter
-    if preyPositionKnown == 0 and predatorPositionKnown == 0:
-        predatorPosKnown = isPredatorPosKnown()
-        if predatorPosKnown:
-            surveyedNode, preyPresent = surveyNode(0, defectiveDrone)
-            if preyPresent == 1:
-                preyFoundCounter += 1
-            updateBelief(0, surveyedNode, preyPresent, beliefForFaultyDrone)
+
+def updateBeliefNextStep(distractedPredator = 0, nextStepLookup = 0):
+    global preyStateBelief, predatorStateBelief
+    if nextStepLookup == 0:
+        updateBeliefOnEntityMovement(0)
+        if distractedPredator==0:
+            updateBeliefOnEntityMovement(1, distractedPredator=0)
         else:
-            surveyedNode, predatorPresent = surveyNode(1, defectiveDrone)
-            if predatorPresent == 1:
-                predatorFoundCounter += 1
-            updateBelief(1, surveyedNode, predatorPresent, beliefForFaultyDrone)          # preyPresent = 1 if Prey present else 0
-            if surveyedNode == prey.getCurrNode():
-                updateBelief(0, surveyedNode, 1)
-            else:
-                updateBelief(0, surveyedNode, 0)
-    elif preyPositionKnown == 0 and predatorPositionKnown == 1:
-        surveyedNode, preyPresent = surveyNode(0, defectiveDrone)
-        if preyPresent == 1:
-            preyFoundCounter += 1
-        updateBelief(0, surveyedNode, preyPresent, beliefForFaultyDrone)
-    elif preyPositionKnown == 1 and predatorPositionKnown == 0:
-        surveyedNode, predatorPresent = surveyNode(1, defectiveDrone)
-        if predatorPresent == 1:
-            predatorFoundCounter += 1
-        updateBelief(1, surveyedNode, predatorPresent, beliefForFaultyDrone)
+            updateBeliefOnEntityMovement(1, distractedPredator=1)
+    else:
+        preyBelief = updateBeliefOnEntityMovement(0, nextStepLookup= nextStepLookup)
+        if distractedPredator==0:
+            predatorBelief = updateBeliefOnEntityMovement(1, distractedPredator=0, nextStepLookup= nextStepLookup)
+        else:
+            predatorBelief =updateBeliefOnEntityMovement(1, distractedPredator=1, nextStepLookup= nextStepLookup)
+        return preyBelief, predatorBelief
 
 
 def surveyOrMoveAgentMovement(preyPositionKnown, predatorPositionKnown, easilyDistractedPredator, defectiveDrone, beliefForFaultyDrone = 0):
@@ -366,220 +355,33 @@ def surveyOrMoveAgentMovement(preyPositionKnown, predatorPositionKnown, easilyDi
 
 
 
-def updateBeliefNextStep(distractedPredator = 0, nextStepLookup = 0):
-    global preyStateBelief, predatorStateBelief
-    if nextStepLookup == 0:
-        updateBeliefOnEntityMovement(0)
-        if distractedPredator==0:
-            updateBeliefOnEntityMovement(1, distractedPredator=0)
+def surveyLogic(preyPositionKnown = 0, predatorPositionKnown = 0, defectiveDrone = 0, beliefForFaultyDrone = 0):
+    if preyPositionKnown == 0 and predatorPositionKnown == 0:
+        predatorPosKnown = isPredatorPosKnown()
+        if predatorPosKnown:
+            surveyedNode, preyPresent = surveyNode(0, defectiveDrone)
+            if preyPresent == 1:
+                gVar.preyFoundCounter += 1
+            updateBelief(0, surveyedNode, preyPresent, beliefForFaultyDrone)
         else:
-            updateBeliefOnEntityMovement(1, distractedPredator=1)
-    else:
-        preyBelief = updateBeliefOnEntityMovement(0, nextStepLookup= nextStepLookup)
-        if distractedPredator==0:
-            predatorBelief = updateBeliefOnEntityMovement(1, distractedPredator=0, nextStepLookup= nextStepLookup)
-        else:
-            predatorBelief =updateBeliefOnEntityMovement(1, distractedPredator=1, nextStepLookup= nextStepLookup)
-        return preyBelief, predatorBelief
-
-
-# This function will return the max predator probability belief node which is nearest to the agent among other max predator probability belief nodes
-def getDistanceWithClosestPredatorProximity(predatorStateBelief = predatorStateBelief):
-    global agentPos
-    pos = findMaxProbability(predatorStateBelief)
-    minDist = -1
-    minDistList = []
-    for p in pos:
-        if p == agentPos:
-            continue
-        pathReceived, distance = g.breadthFirstSearch(agentPos, p)
-        if minDist == -1:
-            minDist = distance
-            minDistList.append(p)
-        elif minDist == distance:
-            minDistList.append(p)
-        elif minDist > distance:
-            minDist = distance
-            minDistList = [p]
-    return minDistList
-
-# Argument: 0 - Survey for Prey, 1/others - Survey for Predator    -> Returns Tuple (randomly selected node with highest probability, 1 if Prey/Predator present else 0)
-def surveyNode(surveyFor = 0, defectiveDrone = 0):
-    global g, preyStateBelief, predatorStateBelief
-    choiceDefective = random.random()
-    if surveyFor == 0:
-        pos = findMaxProbability(preyStateBelief)
-        positionToCheck = random.choice(pos)
-        if defectiveDrone==1 and choiceDefective < 0.1:
-            return (positionToCheck, 0)
-        if positionToCheck == prey.getCurrNode():
-            return (positionToCheck, 1)
-        else:
-            return (positionToCheck, 0)
-    else:
-        minDistList = getDistanceWithClosestPredatorProximity()
-        positionToCheck = random.choice(minDistList)
-        if defectiveDrone==1 and choiceDefective < 0.1:
-            return (positionToCheck, 0)
-        if positionToCheck == predator.getCurrNode():
-            return (positionToCheck, 1)
-        else:
-            return (positionToCheck, 0)
-
-# Distributes probability from the input cell into other cells with non-zero probability values
-# x : 0 = Prey Update, 1 = Predator Update
-def distributeProbabilityFromCell(x, node, beliefForFaultyDrone = 0):
-    # print('In distributeProbabilityFromCell with node : '+str(node))
-    global g, preyStateBelief, predatorStateBelief
-    if x == 0:
-        checkStateBelief(0)
-        nodesToAddP = [i for i in preyStateBelief if preyStateBelief[i] > 0]
-    else:
-        checkStateBelief(1)
-        latestCurrentBelief = getStateBelief(1)
-        nodesToAddP = [i for i in predatorStateBelief if predatorStateBelief[i] > 0]
-    # print('nodesToAddP : '+str(nodesToAddP))
-    if node in nodesToAddP:
-        nodesToAddP.remove(node)
-    for n in nodesToAddP:
-        if beliefForFaultyDrone == 0:
-            if x == 0:
-                # print('n : '+ str(n))
-                # print('node : '+ str(node))
-                # print('preyStateBelief[node] : '+ str(preyStateBelief[node]))
-                # print('len(nodesToAddP) : '+ str(len(nodesToAddP)))
-                # preyStateBelief[n] += (preyStateBelief[node]/len(nodesToAddP))
-                t = 1-preyStateBelief[node]
-                # preyStateBelief[n] += (preyStateBelief[n]*t)
-                preyStateBelief[n] = (preyStateBelief[n]/t)
-                # checkStateBelief(0)
+            surveyedNode, predatorPresent = surveyNode(1, defectiveDrone)
+            if predatorPresent == 1:
+                gVar.predatorFoundCounter += 1
+            updateBelief(1, surveyedNode, predatorPresent, beliefForFaultyDrone)          # preyPresent = 1 if Prey present else 0
+            if surveyedNode == gVar.prey.getCurrNode():
+                updateBelief(0, surveyedNode, 1)
             else:
-                # predatorStateBelief[n] += (predatorStateBelief[node]/len(nodesToAddP))
-                t = latestCurrentBelief-predatorStateBelief[node]
-                predatorStateBelief[n] = (predatorStateBelief[n]/t)
-        elif beliefForFaultyDrone == 1:
-            if x == 0:
-                t = 1-preyStateBelief[node]  + preyStateBelief[node]*0.1
-                preyStateBelief[n] = (preyStateBelief[n]/t)
-            else:
-                t = latestCurrentBelief - predatorStateBelief[node] + predatorStateBelief[node]*0.1
-                predatorStateBelief[n] = (predatorStateBelief[n]/t)
-    if beliefForFaultyDrone == 1:
-        if x == 0:
-            t = 1-preyStateBelief[node]  + preyStateBelief[node]*0.1
-            preyStateBelief[node] = preyStateBelief[node]*0.1 / t
-            checkStateBelief(0)
-        else:
-            t = latestCurrentBelief - predatorStateBelief[node] + predatorStateBelief[node]*0.1
-            predatorStateBelief[node] = predatorStateBelief[node]*0.1 / t
-            checkStateBelief(1)
-
-    if beliefForFaultyDrone == 0:
-        if x == 0 :
-            preyStateBelief[node] = float(0)
-            checkStateBelief(0)
-        elif beliefForFaultyDrone == 0:
-            predatorStateBelief[node] = float(0)
-            checkStateBelief(1)
-
-def updateBeliefOnEntityMovement(x, distractedPredator = 1, nextStepLookup = 0):
-    # print('In updateBeliefOnEntityMovement : ')
-    global preyStateBelief, predatorStateBelief
-    newBeliefState = {}
-    for i in range(size):
-        newBeliefState[i] = float(0)
-    if x == 0:
-        # nonZeroProbabilityIndices = findMaxProbability(preyStateBelief)
-        nonZeroProbabilityIndices = getNonZeroProbabilityIndices(preyStateBelief)
-        # print('nonZeroProbabilityIndices : ' + str(nonZeroProbabilityIndices))
-        # Updating belief based on beleifs received
-        # Agent 3's logic
-        for node in nonZeroProbabilityIndices:
-            adjNodes = g.getNextNodes(node)
-            adjNodes.append(node)
-            for j in adjNodes:
-                # p = (1/len(adjNodes))/(1/preyStateBelief[node])
-                p = (preyStateBelief[node]/len(adjNodes))
-                if j not in newBeliefState.keys():
-                    newBeliefState[j] = p
-                else:
-                    newBeliefState[j] += p
-        if nextStepLookup == 1:
-            return newBeliefState
-        preyStateBelief = newBeliefState
-    else:
-        # checkStateBelief(1)
-        # Agent 5, 6, 7, 8 Predator moving logic. Note: This logic is only for easily distracted predator movement
-        nonZeroProbabilityIndices = getNonZeroProbabilityIndices(predatorStateBelief)
-        # print('nonZeroProbabilityIndices : ' + str(nonZeroProbabilityIndices))
-        # Updating belief based on previous beliefs received
-        for node in nonZeroProbabilityIndices:
-            adjNodes = g.getNextNodes(node)
-            # adjNodes.append(node)
-            if distractedPredator == 1:
-                # 0.4 chance of predator taking a random next cell
-                randomNodeProbab = 0.4 * predatorStateBelief[node]
-                p = float(randomNodeProbab/len(adjNodes))
-                for j in adjNodes:
-                    if j not in newBeliefState.keys():
-                        newBeliefState[j] = p
-                    else:
-                        newBeliefState[j] += p
-                # 0.6 chance of predator taking the next cell as the next cell from BFS Path to agent
-                # KV: nextCellToAgent = g.breadthFirstSearch(predator.getCurrNode(), agentPos)[0]
-                nextCellToAgent = g.breadthFirstSearch(node, agentPos)[0]
-                # print(nextCellToAgent)
-                if len(nextCellToAgent) > 1:
-                    newBeliefState[nextCellToAgent[1]] += ((1.0-0.4) * predatorStateBelief[node])
-                else:
-                    # quit()
-                    newBeliefState[node] += ((1-0.4) * predatorStateBelief[node])
-            else:
-                # KV: nextCellToAgent = g.breadthFirstSearch(predator.getCurrNode(), agentPos)[0]
-                nextCellToAgent = g.breadthFirstSearch(node, agentPos)[0]
-                # print(nextCellToAgent)
-                if len(nextCellToAgent) > 1:
-                    newBeliefState[nextCellToAgent[1]] += predatorStateBelief[node]
-                else:
-                    # quit()
-                    newBeliefState[node] += predatorStateBelief[node]
-        if nextStepLookup == 1:
-            return newBeliefState
-        predatorStateBelief = newBeliefState
-        checkStateBelief(1)
-
-# Value of x : 0 = Prey Update, 1 = Predator Update, 3 = Prey and Predator both update
-# surveyedNode : The node being surveyed. -1 value represents if node was 
-def updateBelief(x, surveyedNode = -1, entityPresent = -1, beliefForFaultyDrone = 0):
-    global preyStateBelief, predatorStateBelief, agentPos
-    # Inititalizing newBeliefState as dummy dictionary to store new belief calculated
-    newBeliefState = {}
-    for i in range(size):
-        newBeliefState[i] = float(0)
-    if x == 0 or x == 3:
-        checkStateBelief(0)
-        if entityPresent == 0:
-            checkStateBelief(0)
-            distributeProbabilityFromCell(0, surveyedNode, beliefForFaultyDrone)
-        elif entityPresent == 1:
-            newBeliefState[surveyedNode] = float(1)
-            preyStateBelief = newBeliefState
-        elif entityPresent == -1:
-            updateBeliefOnEntityMovement(0)
-        checkStateBelief(0)
-    elif x == 1 or x == 3:
-        # preyStateBelief[agentPos] = 0
-        if entityPresent == 0:
-            distributeProbabilityFromCell(1, surveyedNode, beliefForFaultyDrone)
-        elif entityPresent == 1:
-            print('Predator found. Updating probability for Surveyed Node :',surveyedNode)
-            # checkStateBelief(1)
-            newBeliefState[surveyedNode] = float(1)
-            predatorStateBelief = newBeliefState
-            checkStateBelief(1)
-        elif entityPresent == -1:
-            updateBeliefOnEntityMovement(1)
-
+                updateBelief(0, surveyedNode, 0)
+    elif preyPositionKnown == 0 and predatorPositionKnown == 1:
+        surveyedNode, preyPresent = surveyNode(0, defectiveDrone)
+        if preyPresent == 1:
+            gVar.preyFoundCounter += 1
+        updateBelief(0, surveyedNode, preyPresent, beliefForFaultyDrone)
+    elif preyPositionKnown == 1 and predatorPositionKnown == 0:
+        surveyedNode, predatorPresent = surveyNode(1, defectiveDrone)
+        if predatorPresent == 1:
+            gVar.predatorFoundCounter += 1
+        updateBelief(1, surveyedNode, predatorPresent, beliefForFaultyDrone)
 
 ## Agent 7 
 def agentSevenMovement(defectiveDrone = 0, beliefForFaultyDrone = 0):
@@ -806,18 +608,3 @@ def generateGraph():
             genG.add_edge(i, n)
 
 
-# input: List containing each element as list of Win/Loss/Tie, No. of steps, PreyFoundCounter, PredatorFoundCounter
-def writeToCSV(data, agentNo):
-    with open('a_' + str(agentNo) + '.csv', 'w', newline='') as file:
-        writer = csv.writer(file, delimiter=',')
-        if agentNo <= 2:
-            writer.writerow(['Status','Steps'])
-        elif agentNo <= 3:
-            writer.writerow(['Status','Steps','PreyFoundCounter'])
-        elif agentNo >= 4:
-            writer.writerow(['Status','Steps','PreyFoundCounter','PredatorFoundCounter'])
-        # elif agentNo > 6:
-        #     writer.writerow(['Status','Steps','PreyFoundCounter','PredatorFoundCounter'])
-        writer.writerows(data)
-        file.close()
-    print("Successfully written to file {}", 'a_' + str(agentNo) + '.csv')
